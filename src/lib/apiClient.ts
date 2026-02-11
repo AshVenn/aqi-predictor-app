@@ -1,6 +1,17 @@
 // AQI Backend API Client
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+const API_BEARER_TOKEN = import.meta.env.VITE_AQI_API_BEARER_TOKEN?.trim();
+
+function getAuthHeaders(): HeadersInit {
+  if (!API_BEARER_TOKEN) {
+    throw new Error('Missing VITE_AQI_API_BEARER_TOKEN environment variable');
+  }
+
+  return {
+    Authorization: `Bearer ${API_BEARER_TOKEN}`,
+  };
+}
 
 export interface PredictPayload {
   latitude: number;
@@ -45,6 +56,7 @@ export async function predictAQI(payload: PredictPayload): Promise<PredictRespon
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      ...getAuthHeaders(),
     },
     body: JSON.stringify(payload),
   });

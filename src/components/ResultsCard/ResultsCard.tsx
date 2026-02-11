@@ -67,9 +67,14 @@ export function ResultsCard({ result, isLoading, error }: ResultsCardProps) {
   const exactValue = result.aqi_exact ?? null;
   const exactCategory = result.aqi_category_exact ?? null;
 
-  const categoryClass = getAQICategoryClass(predictedCategory);
-  const aqiColor = getAQIColor(predictedValue);
-  const description = getAQICategoryDescription(predictedCategory);
+  const useCalculatedPrimary =
+    result.used_model === false && exactValue !== null && !!exactCategory;
+  const displayValue = useCalculatedPrimary ? exactValue : predictedValue;
+  const displayCategory = useCalculatedPrimary ? exactCategory : predictedCategory;
+
+  const categoryClass = getAQICategoryClass(displayCategory);
+  const aqiColor = getAQIColor(displayValue);
+  const description = getAQICategoryDescription(displayCategory);
 
   return (
     <Card className="overflow-hidden fade-in">
@@ -86,16 +91,16 @@ export function ResultsCard({ result, isLoading, error }: ResultsCardProps) {
           style={{ backgroundColor: `${aqiColor}15` }}
         >
           <div className="text-xs uppercase tracking-wider text-muted-foreground mb-1">
-            Predicted AQI
+            {useCalculatedPrimary ? 'Calculated AQI (max IAQI)' : 'Predicted AQI'}
           </div>
           <div 
             className="text-4xl font-bold"
             style={{ color: aqiColor }}
           >
-            {Math.round(predictedValue)}
+            {Math.round(displayValue)}
           </div>
           
-          {exactValue !== null && (
+          {exactValue !== null && !useCalculatedPrimary && (
             <div className="text-sm text-muted-foreground mt-1">
               Exact: {exactValue.toFixed(1)}
             </div>
@@ -105,7 +110,7 @@ export function ResultsCard({ result, isLoading, error }: ResultsCardProps) {
         {/* Category Badge */}
         <div className="text-center">
           <span className={`aqi-badge ${categoryClass}`}>
-            {predictedCategory}
+            {displayCategory}
           </span>
         </div>
 
@@ -120,7 +125,7 @@ export function ResultsCard({ result, isLoading, error }: ResultsCardProps) {
         )}
 
         {/* Exact Category */}
-        {exactValue !== null && exactCategory && (
+        {exactValue !== null && exactCategory && !useCalculatedPrimary && (
           <div className="text-center text-sm text-muted-foreground">
             Exact category: <span className="text-foreground">{exactCategory}</span>
           </div>
