@@ -1,15 +1,41 @@
-import { useState, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { MapPanel } from '@/components/MapPanel/MapPanel';
 import { PollutantForm } from '@/components/PollutantForm/PollutantForm';
 import { ResultsCard } from '@/components/ResultsCard/ResultsCard';
 import { useAQIPrediction } from '@/hooks/useAQIPrediction';
+import { checkHealth } from '@/lib/apiClient';
 import type { Coordinates, PredictFormData } from '@/types/aqi';
 
 export function Calculator() {
   const [marker, setMarker] = useState<Coordinates | null>(null);
+  const [modelHealth, setModelHealth] = useState<'checking' | 'ready' | 'unavailable'>('checking');
+  const [modelName, setModelName] = useState<string | null>(null);
   
   // AQI Prediction
   const { result, isLoading: isPredicting, error: predictionError, predict, reset } = useAQIPrediction();
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadHealth = async () => {
+      try {
+        const health = await checkHealth();
+        if (!isMounted) return;
+
+        setModelHealth(health.ok && health.model_loaded ? 'ready' : 'unavailable');
+        setModelName(health.model_name);
+      } catch {
+        if (!isMounted) return;
+        setModelHealth('unavailable');
+      }
+    };
+
+    void loadHealth();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
   
   const handleMapClick = useCallback((coords: Coordinates) => {
     setMarker(coords);
@@ -66,7 +92,24 @@ export function Calculator() {
           {/* Footer */}
           <div className="px-5 py-3 border-t bg-muted/30">
             <p className="text-xs text-muted-foreground text-center">
-              Backend: <code className="text-primary">localhost:8000</code>
+              AI model:{' '}
+              <span
+                className={
+                  modelHealth === 'ready'
+                    ? 'text-green-600'
+                    : modelHealth === 'checking'
+                      ? 'text-muted-foreground'
+                      : 'text-destructive'
+                }
+              >
+                {modelHealth === 'ready' ? 'Ready' : modelHealth === 'checking' ? 'Checking...' : 'Unavailable'}
+              </span>
+              {modelName ? (
+                <>
+                  {' '}
+                  <span className="text-foreground">({modelName})</span>
+                </>
+              ) : null}
             </p>
           </div>
         </aside>

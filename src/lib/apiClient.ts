@@ -51,6 +51,12 @@ export interface ApiError {
   detail: string | { loc: string[]; msg: string; type: string }[];
 }
 
+export interface HealthResponse {
+  ok: boolean;
+  model_loaded: boolean;
+  model_name: string | null;
+}
+
 export async function predictAQI(payload: PredictPayload): Promise<PredictResponse> {
   const response = await fetch(`${BACKEND_URL}/predict`, {
     method: 'POST',
@@ -81,12 +87,27 @@ export async function predictAQI(payload: PredictPayload): Promise<PredictRespon
   return response.json();
 }
 
-// Health check endpoint (optional)
-export async function checkHealth(): Promise<boolean> {
-  try {
-    const response = await fetch(`${BACKEND_URL}/health`);
-    return response.ok;
-  } catch {
-    return false;
+// Health check endpoint
+export async function checkHealth(): Promise<HealthResponse> {
+  const response = await fetch(`${BACKEND_URL}/health`, {
+    headers: {
+      ...getAuthHeaders(),
+    },
+  });
+
+  if (!response.ok) {
+    const errorData: ApiError = await response.json().catch(() => ({
+      detail: 'Health check failed',
+    }));
+
+    throw new Error(typeof errorData.detail === 'string' ? errorData.detail : 'Health check failed');
   }
+
+  const data = (await response.json()) as Partial<HealthResponse>;
+
+  return {
+    ok: Boolean(data.ok),
+    model_loaded: Boolean(data.model_loaded),
+    model_name: data.model_name ?? null,
+  };
 }
