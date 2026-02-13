@@ -4,6 +4,7 @@ import { PollutantForm } from '@/components/PollutantForm/PollutantForm';
 import { ResultsCard } from '@/components/ResultsCard/ResultsCard';
 import { useAQIPrediction } from '@/hooks/useAQIPrediction';
 import { checkHealth } from '@/lib/apiClient';
+import { sanitizeCoordinates } from '@/lib/coordinates';
 import type { Coordinates, PredictFormData } from '@/types/aqi';
 
 export function Calculator() {
@@ -38,7 +39,7 @@ export function Calculator() {
   }, []);
   
   const handleMapClick = useCallback((coords: Coordinates) => {
-    setMarker(coords);
+    setMarker(sanitizeCoordinates(coords));
   }, []);
 
   const handleClearMarker = useCallback(() => {

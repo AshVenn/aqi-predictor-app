@@ -1,5 +1,13 @@
 import { useState, useCallback } from 'react';
 import { predictAQI, type PredictPayload } from '@/lib/apiClient';
+import {
+  LATITUDE_MAX,
+  LATITUDE_MIN,
+  LONGITUDE_MAX,
+  LONGITUDE_MIN,
+  isValidLatitude,
+  isValidLongitude,
+} from '@/lib/coordinates';
 import type { AQIResult } from '@/types/aqi';
 
 interface UseAQIPredictionReturn {
@@ -21,19 +29,11 @@ export function useAQIPrediction(): UseAQIPredictionReturn {
     setResult(null);
 
     try {
-      if (
-        !Number.isFinite(payload.latitude) ||
-        payload.latitude < -90 ||
-        payload.latitude > 90
-      ) {
-        throw new Error('Latitude must be between -90 and 90');
+      if (!isValidLatitude(payload.latitude)) {
+        throw new Error(`Latitude must be between ${LATITUDE_MIN} and ${LATITUDE_MAX}`);
       }
-      if (
-        !Number.isFinite(payload.longitude) ||
-        payload.longitude < -180 ||
-        payload.longitude > 180
-      ) {
-        throw new Error('Longitude must be between -180 and 180');
+      if (!isValidLongitude(payload.longitude)) {
+        throw new Error(`Longitude must be between ${LONGITUDE_MIN} and ${LONGITUDE_MAX}`);
       }
       if (!payload.timestamp || !payload.timestamp.includes('T')) {
         throw new Error('Timestamp must be a valid ISO 8601 string');

@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-lea
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import type { Coordinates } from '@/types/aqi';
+import { sanitizeCoordinates } from '@/lib/coordinates';
 
 // Fix for default marker icons in React-Leaflet
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
@@ -58,7 +59,7 @@ interface MapPanelProps {
 function MapClickHandler({ onMapClick }: { onMapClick: (coords: Coordinates) => void }) {
   useMapEvents({
     click(e: L.LeafletMouseEvent) {
-      const coords = { lat: e.latlng.lat, lon: e.latlng.lng };
+      const coords = sanitizeCoordinates({ lat: e.latlng.lat, lon: e.latlng.lng });
       onMapClick(coords);
     },
   });

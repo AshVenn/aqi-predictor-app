@@ -4,6 +4,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
+  LATITUDE_MAX,
+  LATITUDE_MIN,
+  LONGITUDE_MAX,
+  LONGITUDE_MIN,
+  isValidLatitude,
+  isValidLongitude,
+  sanitizeCoordinates,
+} from '@/lib/coordinates';
+import {
   POLLUTANTS,
   type Coordinates,
   type PollutantKey,
@@ -60,6 +69,14 @@ export function PollutantForm({ coordinates, onSubmit, onClearMarker, isLoading 
     }, {} as Record<PollutantKey, number | undefined>);
   }, []);
 
+  const normalizedCoordinates = useMemo(() => {
+    if (!coordinates) {
+      return null;
+    }
+
+    return sanitizeCoordinates(coordinates);
+  }, [coordinates]);
+
   const handlePollutantChange = (key: PollutantKey, value: string) => {
     setPollutants((prev) => ({
       ...prev,
@@ -76,13 +93,13 @@ export function PollutantForm({ coordinates, onSubmit, onClearMarker, isLoading 
 
     const resolvedLatitude = isManualLocation
       ? latitude
-      : coordinates
-        ? coordinates.lat.toFixed(6)
+      : normalizedCoordinates
+        ? normalizedCoordinates.lat.toFixed(6)
         : latitude;
     const resolvedLongitude = isManualLocation
       ? longitude
-      : coordinates
-        ? coordinates.lon.toFixed(6)
+      : normalizedCoordinates
+        ? normalizedCoordinates.lon.toFixed(6)
         : longitude;
 
     const latValue = resolvedLatitude.trim();
@@ -98,12 +115,12 @@ export function PollutantForm({ coordinates, onSubmit, onClearMarker, isLoading 
     const parsedLat = latValue ? Number(latValue) : NaN;
     const parsedLon = lonValue ? Number(lonValue) : NaN;
 
-    if (latValue && (!Number.isFinite(parsedLat) || parsedLat < -90 || parsedLat > 90)) {
-      newErrors.latitude = 'Latitude must be between -90 and 90';
+    if (latValue && !isValidLatitude(parsedLat)) {
+      newErrors.latitude = `Latitude must be between ${LATITUDE_MIN} and ${LATITUDE_MAX}`;
     }
 
-    if (lonValue && (!Number.isFinite(parsedLon) || parsedLon < -180 || parsedLon > 180)) {
-      newErrors.longitude = 'Longitude must be between -180 and 180';
+    if (lonValue && !isValidLongitude(parsedLon)) {
+      newErrors.longitude = `Longitude must be between ${LONGITUDE_MIN} and ${LONGITUDE_MAX}`;
     }
 
     if (!timestamp) {
@@ -210,9 +227,9 @@ export function PollutantForm({ coordinates, onSubmit, onClearMarker, isLoading 
               id="lat"
               type="number"
               step="any"
-              min={-90}
-              max={90}
-              value={isManualLocation ? latitude : coordinates ? coordinates.lat.toFixed(6) : latitude}
+              min={LATITUDE_MIN}
+              max={LATITUDE_MAX}
+              value={isManualLocation ? latitude : normalizedCoordinates ? normalizedCoordinates.lat.toFixed(6) : latitude}
               onChange={(e) => {
                 setIsManualLocation(true);
                 setLatitude(e.target.value);
@@ -233,9 +250,9 @@ export function PollutantForm({ coordinates, onSubmit, onClearMarker, isLoading 
               id="lon"
               type="number"
               step="any"
-              min={-180}
-              max={180}
-              value={isManualLocation ? longitude : coordinates ? coordinates.lon.toFixed(6) : longitude}
+              min={LONGITUDE_MIN}
+              max={LONGITUDE_MAX}
+              value={isManualLocation ? longitude : normalizedCoordinates ? normalizedCoordinates.lon.toFixed(6) : longitude}
               onChange={(e) => {
                 setIsManualLocation(true);
                 setLongitude(e.target.value);
@@ -252,7 +269,7 @@ export function PollutantForm({ coordinates, onSubmit, onClearMarker, isLoading 
           </div>
         </div>
 
-        {coordinates && (
+        {normalizedCoordinates && (
           <Button
             type="button"
             variant="outline"
